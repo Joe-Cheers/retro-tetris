@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+  <meta name="theme-color" content="#11130f">
+  <meta name="description" content="Modern Retro Pixel Arcade Tetris">
+  <link rel="manifest" href="manifest.json">
+  <title>RETRO TETRIS</title>
+  <style>
+    :root{--bg:#11130f;--panel:#1b1f18;--panel2:#252b20;--ink:#e8e6c8;--muted:#8f967d;--accent:#e6d66a;--grid:#2b3226}
+    *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+    html,body{margin:0;width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--ink);font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+    body{touch-action:manipulation}
+    button{font:inherit;color:inherit;border:0}
+    #app{width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:max(8px,env(safe-area-inset-top)) max(8px,env(safe-area-inset-right)) max(8px,env(safe-area-inset-bottom)) max(8px,env(safe-area-inset-left))}
+    .screen{width:min(100%,900px);height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center}
+    .hidden{display:none!important}
+    .logo{text-align:center;text-shadow:3px 3px #050605;margin-bottom:28px}
+    .logo .small{font-size:clamp(12px,3vw,18px);letter-spacing:.35em;color:var(--muted)}
+    .logo h1{font-size:clamp(34px,11vw,72px);line-height:.95;margin:8px 0;color:var(--accent);letter-spacing:.06em}
+    .menu{display:grid;gap:12px;width:min(78vw,330px)}
+    .retro-btn{background:var(--panel2);border:2px solid #59604c;border-right-color:#0a0c09;border-bottom-color:#0a0c09;padding:14px 18px;min-height:52px;cursor:pointer;box-shadow:inset 2px 2px #353c2e;text-transform:uppercase;letter-spacing:.08em}
+    .retro-btn:active{border-color:#0a0c09;border-right-color:#59604c;border-bottom-color:#59604c;transform:translate(1px,1px)}
+    .hint{font-size:11px;color:var(--muted);margin-top:18px;text-align:center;line-height:1.7}
+    #game{justify-content:flex-start;gap:6px}
+    .hud{width:min(96vw,520px);display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:6px;padding-top:2px}
+    .hudbox{background:var(--panel);border:1px solid #394031;padding:5px 8px;min-width:0}
+    .label{font-size:9px;color:var(--muted);letter-spacing:.12em}
+    .value{font-size:clamp(13px,3.8vw,19px);font-weight:800;margin-top:2px}
+    .hudbox.center{text-align:center}
+    .pause{width:38px;height:34px;padding:0;font-size:16px}
+    .arena{display:grid;grid-template-columns:minmax(54px,86px) auto minmax(54px,86px);align-items:start;gap:clamp(5px,2vw,14px);width:min(96vw,520px);min-height:0}
+    .side{display:flex;flex-direction:column;gap:8px}
+    .side-title{font-size:9px;color:var(--muted);letter-spacing:.12em;margin-bottom:2px}
+    .preview{background:#151812;border:1px solid #394031;display:grid;place-items:center;aspect-ratio:1/1;padding:5px}
+    .preview canvas{width:100%;height:100%;image-rendering:pixelated}
+    #boardWrap{position:relative;display:flex;justify-content:center}
+    #board{display:block;image-rendering:pixelated;border:2px solid #68715a;box-shadow:0 0 0 3px #080a07,0 8px 25px #0008;background:#171a14;touch-action:none}
+    .gestureHint{font-size:8px;color:#69715d;line-height:1.5;margin-top:5px;text-align:center}
+    .controls{width:min(96vw,520px);display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr;gap:5px}
+    .control{min-height:48px;padding:5px;background:var(--panel);border:2px solid #4e5744;border-right-color:#090b08;border-bottom-color:#090b08;touch-action:none}
+    .control .big{font-size:19px;line-height:20px}
+    .control .tiny{font-size:7px;color:var(--muted);letter-spacing:.04em}
+    .control:active,.control.active{transform:translate(1px,1px);border-color:#090b08;border-right-color:#4e5744;border-bottom-color:#4e5744;background:#2a3024}
+    .lower{width:min(96vw,520px);display:grid;grid-template-columns:1fr 1fr;gap:5px}
+    .lower .control{min-height:40px}
+    .overlay{position:fixed;inset:0;background:#050604d9;display:flex;align-items:center;justify-content:center;padding:20px;z-index:10}
+    .dialog{width:min(92vw,400px);background:var(--panel);border:2px solid #69735b;box-shadow:0 0 0 4px #080a07;padding:20px;text-align:center}
+    .dialog h2{margin:0 0 16px;color:var(--accent);font-size:26px}
+    .dialog p{font-size:12px;line-height:1.8;color:#c5c8ad}
+    .stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;text-align:left;margin:12px 0 18px}
+    .stat{border:1px solid #394031;padding:8px}.stat b{display:block;font-size:8px;color:var(--muted)}.stat span{font-size:15px}
+    .settings{display:grid;gap:10px;text-align:left;margin-bottom:15px}
+    .setting{display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #333a2d;padding:7px 0;font-size:12px}
+    .setting button{padding:7px 10px;background:#252b20;border:1px solid #59604c;min-width:90px}
+    .toast{position:fixed;left:50%;top:20%;transform:translateX(-50%);pointer-events:none;font-weight:900;font-size:clamp(22px,7vw,42px);color:var(--accent);text-shadow:3px 3px #000;z-index:8;opacity:0}
+    .toast.show{animation:toast .8s steps(5,end)}
+    @keyframes toast{0%{opacity:0;transform:translate(-50%,8px) scale(.9)}20%,70%{opacity:1;transform:translate(-50%,0) scale(1)}100%{opacity:0;transform:translate(-50%,-12px) scale(1.04)}}
+    @media (max-height:700px){#game{gap:3px}.hud{padding-top:0}.arena{gap:3px}.controls{gap:3px}.control{min-height:40px}.lower .control{min-height:34px}.gestureHint{display:none}.preview{padding:3px}}
+    @media (min-width:700px){#game{justify-content:center}.controls{grid-template-columns:repeat(5,76px);justify-content:center}.lower{grid-template-columns:160px 160px;justify-content:center}}
+    @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}.toast.show{animation:none;opacity:1}}
+  </style>
+</head>
+<body>
+<div id="app">
+  <section id="menu" class="screen">
+    <div class="logo"><div class="small">MODERN RETRO PIXEL ARCADE</div><h1>RETRO<br>TETRIS</h1></div>
+    <div class="menu">
+      <button class="retro-btn" id="playBtn">▶ PLAY</button>
+      <button class="retro-btn" id="recordsBtn">▣ RECORDS</button>
+      <button class="retro-btn" id="settingsBtn">⚙ SETTINGS</button>
+    </div>
+    <div class="hint">TAP = ROTATE　← → = MOVE　↓ = DROP<br>↑ = HOLD　SWIPE = DIRECT CONTROL</div>
+  </section>
+
+  <section id="game" class="screen hidden">
+    <div class="hud">
+      <div class="hudbox"><div class="label">SCORE</div><div id="score" class="value">0</div></div>
+      <div class="hudbox center"><div class="label">LEVEL</div><div id="level" class="value">1</div></div>
+      <button id="pauseBtn" class="retro-btn pause">Ⅱ</button>
+    </div>
+    <div class="arena">
+      <aside class="side">
+        <div class="side-title">HOLD</div>
+        <div class="preview"><canvas id="holdCanvas" width="100" height="100"></canvas></div>
+      </aside>
+      <div id="boardWrap"><canvas id="board"></canvas></div>
+      <aside class="side">
+        <div class="side-title">NEXT</div>
+        <div id="nextPreviews"></div>
+      </aside>
+    </div>
+    <div id="toast" class="toast"></div>
+    <div class="controls">
+      <button class="control" data-action="left"><div class="big">◀</div><div class="tiny">LEFT</div></button>
+      <button class="control" data-action="down"><div class="big">▼</div><div class="tiny">SOFT</div></button>
+      <button class="control" data-action="rotate"><div class="big">↻</div><div class="tiny">ROTATE</div></button>
+      <button class="control" data-action="right"><div class="big">▶</div><div class="tiny">RIGHT</div></button>
+      <button class="control" data-action="hold"><div class="big">H</div><div class="tiny">HOLD</div></button>
+    </div>
+    <div class="lower">
+      <button class="control" data-action="drop"><div class="big">⇣</div><div class="tiny">HARD DROP</div></button>
+      <button class="control" id="restartBtn"><div class="big">↻</div><div class="tiny">RESTART</div></button>
+    </div>
+  </section>
+</div>
+
+<div id="overlay" class="overlay hidden"><div id="dialog" class="dialog"></div></div>
+
+<script src="src/game.js"></script>
+</body>
+</html>

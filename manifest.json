@@ -1,0 +1,11 @@
+{
+  "name": "RETRO TETRIS",
+  "short_name": "Retro Tetris",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#11130f",
+  "theme_color": "#11130f",
+  "description": "Modern Retro Pixel Arcade Tetris",
+  "orientation": "portrait-primary",
+  "icons": []
+}
